@@ -1,7 +1,7 @@
 'use client'
 
 import Image from "next/image";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import handler from "./api/imagesRoute";
 
 export default function Home() {
@@ -10,16 +10,33 @@ export default function Home() {
     name: string;
   }
 
+  interface imagesObject {
+    // name: string,
+    format: string
+  }
+
+  const format=['avif', 'gif','jpeg', 'jpg', 'png', 'tiff', 'webp']
+
   const [images, setImages] = useState<MyObject[]>([])
+  const [formatImages, setFormatImages] = useState<string>()
+
+  const inputRef = useRef<string>(null)
+
+  // useEffect(()=>{
+  //   if(inputRef.current){
+  //     inputRef.current.setAttribute('multiple', '')
+  //     inputRef.current.setAttribute('webkitdirectory', '');
+  //     const captureFolder= inputRef.current.getAttribute('webkitdirectory');
+  //     console.log(captureFolder);
+  //   }
+  //   },[]
+  // )
 
   const nameFile = (event: any) =>{
     const selectFiles: string[] = Array.from(event.target.files)
     setImages(selectFiles)
   }
-  const datos = {
-    nombre: 'Ejemplo',
-    valor: 123
-  };
+  
   const imageChange = async() =>{
     for (let index = 0; index < images.length; index++) {
       try {
@@ -28,7 +45,7 @@ export default function Home() {
           headers:{
             'Content-Type': 'application/json'
           },
-          body:JSON.stringify({name:images[index].name, format: "jpg"})
+          body:JSON.stringify({name:images[index].name, format: formatImages})
         })
         if(!respuesta.ok){
           throw new Error(`error al enviar datos: ${respuesta.status}`)
@@ -39,6 +56,28 @@ export default function Home() {
         console.log("error");
       }
     }
+  }
+  const formatoImages = (event:any)=>{
+    console.log(event.target.value);
+    setFormatImages(event.target.value)
+  }
+  const captureFolder = (event:any) =>{
+    const files = event.target.files; // Obtiene el FileList
+    const paths = [];
+    console.log(files);
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      console.log(file);
+      //webkitRelativePath contiene la ruta relativa dentro de la carpeta
+      if (file.webkitRelativePath) {
+        paths.push(file.webkitRelativePath);
+        console.log(file.webkitRelativePath);
+      } else {
+        // Si es un solo archivo, muestra solo su nombre
+        paths.push(file.name);
+        }
+      }
   }
   
   return (
@@ -64,6 +103,10 @@ export default function Home() {
           </li>
         </ol>
 
+        <select onChange={formatoImages}>
+          {format.map(formato=><option value={formato} key={formato}>{formato}</option>)}
+        </select>
+
         <div className="flex gap-4 items-center flex-col sm:flex-row">
           <input
             className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
@@ -73,6 +116,14 @@ export default function Home() {
             accept=".avif"
             onChange={nameFile}
             title = "Choose a video please"
+          />
+          <input 
+            type="file"
+            // ref={inputRef}
+            webkitdirectory="" // Permite seleccionar un directorio (en navegadores compatibles)
+            onChange={captureFolder}
+            // directory="" // También para la compatibilidad del directorio
+            multiple
           />
           <button onClick={imageChange}>cambiar imagenes</button>
         </div>
